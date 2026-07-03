@@ -335,7 +335,13 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white px-6 py-10">
       <div className="mx-auto max-w-6xl">
-        <section className="mx-auto mb-8 max-w-3xl">
+        <section
+          className={`mx-auto max-w-3xl ${
+            character
+              ? "mb-8"
+              : "flex min-h-[calc(100vh-5rem)] flex-col justify-center pb-8"
+          }`}
+        >
           <div className="mb-10 text-center">
             <h1 className="mb-4 text-4xl font-bold">
               Anime / Game OC Creator Agent
@@ -618,9 +624,11 @@ export default function HomePage() {
           </section>
         )}
 
-        {history.length > 0 && (
-          <section className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <h2 className="mb-4 text-xl font-bold">历史角色</h2>
+        <section className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <h2 className="mb-4 text-xl font-bold">历史角色</h2>
+          {history.length === 0 ? (
+            <p className="text-sm text-zinc-500">无历史记录</p>
+          ) : (
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {history.map((item) => (
                 <div
@@ -653,8 +661,8 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </section>
       </div>
     </main>
   );

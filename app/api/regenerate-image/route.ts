@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { callOpenRouterImage } from "@/lib/openrouter";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { PublicCharacterProfile } from "@/types/character";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -152,6 +153,19 @@ export async function POST(req: NextRequest) {
     const character = validateCharacter(
       isRecord(body) ? body.character : undefined
     );
+    const rateLimit = await checkRateLimit(req, {
+      action: "regenerate-image",
+      limit: 20,
+      windowSeconds: 24 * 60 * 60,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: rateLimit.error },
+        { status: 429 }
+      );
+    }
+
     const imageData = await callOpenRouterImage(buildImagePrompt(character));
 
     return NextResponse.json({

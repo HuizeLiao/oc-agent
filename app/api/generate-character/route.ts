@@ -4,6 +4,7 @@ import {
   callOpenRouterText,
   callOpenRouterImage,
 } from "@/lib/openrouter";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type {
   CharacterProfile,
   GenerateCharacterEvent,
@@ -212,6 +213,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "请先输入一个角色灵感。" },
       { status: 400 }
+    );
+  }
+
+  const rateLimit = await checkRateLimit(req, {
+    action: "generate-character",
+    limit: 10,
+    windowSeconds: 24 * 60 * 60,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: rateLimit.error },
+      { status: 429 }
     );
   }
 
