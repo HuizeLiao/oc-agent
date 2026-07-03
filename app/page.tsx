@@ -353,7 +353,7 @@ export default function HomePage() {
             <textarea
               value={userIdea}
               onChange={(e) => setUserIdea(e.target.value)}
-              placeholder="比如：生成一个日漫风格的魔法少女角色，性格开朗有活力。"
+              placeholder="比如：生成一个日漫风格的魔法少女角色。"
               className="h-32 w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 p-4 text-white outline-none focus:border-purple-500"
             />
 
