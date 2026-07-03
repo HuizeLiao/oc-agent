@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildCharacterPrompt } from "@/lib/prompts";
-import {
-  callOpenRouterText,
-  callOpenRouterImage,
-} from "@/lib/openrouter";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { callQwenText, callQwenImage } from "@/lib/qwen";
 import type {
   CharacterProfile,
   GenerateCharacterEvent,
@@ -144,16 +140,16 @@ function getUserFacingError(error: unknown) {
 
   const message = error.message;
 
-  if (message === "Missing OPENROUTER_API_KEY") {
-    return "还没有配置 OpenRouter API Key，请先检查本地环境变量。";
+  if (message === "Missing DASHSCOPE_API_KEY") {
+    return "还没有配置 DashScope API Key，请先检查本地环境变量。";
   }
 
-  if (message.startsWith("OpenRouter text error:")) {
-    return "角色设定生成失败，请稍后再试，或检查 OpenRouter 文本模型是否可用。";
+  if (message.startsWith("DashScope text error:")) {
+    return "角色设定生成失败，请稍后再试，或检查通义千问文本模型是否可用。";
   }
 
-  if (message.startsWith("OpenRouter image error:")) {
-    return "角色图片生成失败，请稍后再试，或检查 OpenRouter 图片模型是否可用。";
+  if (message.startsWith("DashScope image")) {
+    return "角色图片生成失败，请稍后再试，或检查通义图像模型是否可用。";
   }
 
   if (message.startsWith("AI 返回的角色设定")) {
@@ -161,38 +157,6 @@ function getUserFacingError(error: unknown) {
   }
 
   return "生成失败，请稍后再试。";
-}
-
-function extractImageFromOpenRouter(data: unknown): string {
-  const first = isRecord(data) && Array.isArray(data.data)
-    ? data.data[0]
-    : undefined;
-
-  if (!isRecord(first)) {
-    console.error("Raw image response:", JSON.stringify(data, null, 2));
-    throw new Error("OpenRouter 图片接口没有返回 data[0]");
-  }
-
-  // 情况 1：返回 url
-  if (isNonEmptyString(first.url)) {
-    return first.url;
-  }
-
-  // 情况 2：返回 b64_json
-  if (isNonEmptyString(first.b64_json)) {
-    return `data:image/png;base64,${first.b64_json}`;
-  }
-
-  // 情况 3：已经是 data url
-  if (
-    isRecord(first.image_url) &&
-    isNonEmptyString(first.image_url.url)
-  ) {
-    return first.image_url.url;
-  }
-
-  console.error("Raw image response:", JSON.stringify(data, null, 2));
-  throw new Error("没有从 OpenRouter 图片返回结果里找到图片");
 }
 
 export async function POST(req: NextRequest) {
@@ -216,19 +180,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const rateLimit = await checkRateLimit(req, {
-    action: "generate-character",
-    limit: 10,
-    windowSeconds: 24 * 60 * 60,
-  });
-
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: rateLimit.error },
-      { status: 429 }
-    );
-  }
-
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -240,7 +191,7 @@ export async function POST(req: NextRequest) {
       try {
         send({ type: "status", status: "character" });
 
-        const textOutput = await callOpenRouterText(
+        const textOutput = await callQwenText(
           buildCharacterPrompt(userIdea)
         );
 
@@ -248,9 +199,7 @@ export async function POST(req: NextRequest) {
 
         send({ type: "status", status: "image" });
 
-        const imageData = await callOpenRouterImage(character.imagePrompt);
-
-        const imageUrl = extractImageFromOpenRouter(imageData);
+        const imageUrl = await callQwenImage(character.imagePrompt);
 
         send({
           type: "complete",

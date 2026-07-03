@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callOpenRouterImage } from "@/lib/openrouter";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { callQwenImage } from "@/lib/qwen";
 import type { PublicCharacterProfile } from "@/types/character";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -102,46 +101,17 @@ avoid blurry, avoid low quality, avoid messy lines, avoid noisy background.
 `.trim();
 }
 
-function extractImageFromOpenRouter(data: unknown): string {
-  const first = isRecord(data) && Array.isArray(data.data)
-    ? data.data[0]
-    : undefined;
-
-  if (!isRecord(first)) {
-    console.error("Raw image response:", JSON.stringify(data, null, 2));
-    throw new Error("图片接口没有返回结果");
-  }
-
-  if (isNonEmptyString(first.url)) {
-    return first.url;
-  }
-
-  if (isNonEmptyString(first.b64_json)) {
-    return `data:image/png;base64,${first.b64_json}`;
-  }
-
-  if (
-    isRecord(first.image_url) &&
-    isNonEmptyString(first.image_url.url)
-  ) {
-    return first.image_url.url;
-  }
-
-  console.error("Raw image response:", JSON.stringify(data, null, 2));
-  throw new Error("没有从图片返回结果里找到图片");
-}
-
 function getUserFacingError(error: unknown) {
   if (!(error instanceof Error)) {
     return "重新生成图片失败，请稍后再试。";
   }
 
-  if (error.message === "Missing OPENROUTER_API_KEY") {
-    return "还没有配置 OpenRouter API Key，请先检查本地环境变量。";
+  if (error.message === "Missing DASHSCOPE_API_KEY") {
+    return "还没有配置 DashScope API Key，请先检查本地环境变量。";
   }
 
-  if (error.message.startsWith("OpenRouter image error:")) {
-    return "角色图片重新生成失败，请稍后再试，或检查 OpenRouter 图片模型是否可用。";
+  if (error.message.startsWith("DashScope image")) {
+    return "角色图片重新生成失败，请稍后再试，或检查通义图像模型是否可用。";
   }
 
   return error.message || "重新生成图片失败，请稍后再试。";
@@ -153,23 +123,10 @@ export async function POST(req: NextRequest) {
     const character = validateCharacter(
       isRecord(body) ? body.character : undefined
     );
-    const rateLimit = await checkRateLimit(req, {
-      action: "regenerate-image",
-      limit: 20,
-      windowSeconds: 24 * 60 * 60,
-    });
-
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: rateLimit.error },
-        { status: 429 }
-      );
-    }
-
-    const imageData = await callOpenRouterImage(buildImagePrompt(character));
+    const imageUrl = await callQwenImage(buildImagePrompt(character));
 
     return NextResponse.json({
-      imageUrl: extractImageFromOpenRouter(imageData),
+      imageUrl,
     });
   } catch (error) {
     console.error(error);
