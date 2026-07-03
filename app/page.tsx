@@ -335,46 +335,50 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-zinc-950 text-white px-6 py-10">
       <div className="mx-auto max-w-6xl">
-        <section className="mb-10 text-center">
-          <h1 className="text-4xl font-bold mb-4">
-            Anime / Game OC Creator Agent
-          </h1>
-          <p className="text-zinc-400">
-            输入你的灵感，生成原创角色设定和角色形象。
-          </p>
-        </section>
-
-        <section className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <label className="block mb-3 text-sm text-zinc-300">
-            角色灵感
-          </label>
-
-          <textarea
-            value={userIdea}
-            onChange={(e) => setUserIdea(e.target.value)}
-            placeholder="比如：生成一个日漫风格的魔法少女角色，性格开朗有活力。"
-            className="h-32 w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 p-4 text-white outline-none focus:border-purple-500"
-          />
-
-          <button
-            onClick={handleGenerate}
-            disabled={loading}
-            className="mt-4 rounded-xl bg-purple-600 px-6 py-3 font-medium hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "生成中..." : "生成角色"}
-          </button>
-
-          {generationStatus && (
-            <p className="mt-4 text-sm text-zinc-400">
-              {generationStatus}
+        <section className="mx-auto mb-8 max-w-3xl">
+          <div className="mb-10 text-center">
+            <h1 className="mb-4 text-4xl font-bold">
+              Anime / Game OC Creator Agent
+            </h1>
+            <p className="text-zinc-400">
+              输入你的灵感，生成原创角色设定和角色形象。
             </p>
-          )}
+          </div>
 
-          {error && (
-            <p className="mt-4 text-sm text-red-400">
-              {error}
-            </p>
-          )}
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <label className="block mb-3 text-sm text-zinc-300">
+              角色灵感
+            </label>
+
+            <textarea
+              value={userIdea}
+              onChange={(e) => setUserIdea(e.target.value)}
+              placeholder="比如：生成一个日漫风格的魔法少女角色，性格开朗有活力。"
+              className="h-32 w-full resize-none rounded-xl border border-zinc-700 bg-zinc-950 p-4 text-white outline-none focus:border-purple-500"
+            />
+
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="rounded-xl bg-purple-600 px-6 py-3 font-medium hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "生成中..." : "生成角色"}
+              </button>
+            </div>
+
+            {generationStatus && (
+              <p className="mt-4 text-sm text-zinc-400">
+                {generationStatus}
+              </p>
+            )}
+
+            {error && (
+              <p className="mt-4 text-sm text-red-400">
+                {error}
+              </p>
+            )}
+          </div>
         </section>
 
         {character && (
